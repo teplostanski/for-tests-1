@@ -181,6 +181,21 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
 
     return padWord(chosenWord, maxLength);
   };
+  
+  const stop = () => {
+    if (interval) clearInterval(interval);
+    if (millisecondInterval) clearInterval(millisecondInterval);
+    interval = undefined;
+    millisecondInterval = undefined;
+  
+    // Обнуляем все единицы времени:
+    timeLeft.days = 0;
+    timeLeft.hours = 0;
+    timeLeft.minutes = 0;
+    timeLeft.seconds = 0;
+    timeLeft.milliseconds = 0;
+  };
+  
 
   const update = () => {
     let carry = -1;
@@ -199,7 +214,11 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
             : 0;
       }
     }
-  };
+
+    if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0 && timeLeft.milliseconds === 0) {
+      stop();
+    }
+};
 
   const updateMilliseconds = () => {
     timeLeft.milliseconds -= 10;
@@ -210,24 +229,16 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
   };
 
   const start = (callback?: () => void) => {
-    let lastTime = Date.now();
+    update();
+    updateMilliseconds();
 
-    const frame = () => {
-      const now = Date.now();
-      const delta = now - lastTime;
-      if (delta >= 1000) {
-        lastTime = now;
-        update();
-      }
+    interval = setInterval(update, 1000);
+    millisecondInterval = setInterval(() => {
+        updateMilliseconds();
+        if (callback) callback();
+    }, 10);
+};
 
-      updateMilliseconds();
-      if (callback) callback();
-
-      requestAnimationFrame(frame);
-    };
-
-    requestAnimationFrame(frame);
-  };
 
   const getTime = () => {
     // Функция для форматирования числа без ведущих нулей, но с пробелом:
@@ -293,12 +304,7 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
     };
   };
 
-  const stop = () => {
-    if (interval) clearInterval(interval);
-    if (millisecondInterval) clearInterval(millisecondInterval);
-    interval = undefined;
-    millisecondInterval = undefined;
-  };
+
 
   return {
     days: timeLeft.days,
@@ -408,7 +414,10 @@ export const vanillaTimer = (options: VanillaTimerOptions) => {
     start: () => {
       timer.start(updateDisplay);
     },
-    stop: timer.stop,
+    stop: () => {
+      timer.stop();
+      updateDisplay(); // Обновляем отображение после остановки таймера
+    },
     updateDisplay,
   };
 };
@@ -426,10 +435,10 @@ const myTimerElements: VanillaTimerElements = {
 
 const myTimer = vanillaTimer({
   elements: myTimerElements,
-  days: 20,
-  //hours: 5,
-  //minutes: 34,
-  seconds: 11,
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 2,
   milliseconds: 900,
   locale: 'ru',
   showWords: true,
@@ -438,3 +447,4 @@ const myTimer = vanillaTimer({
 });
 
 myTimer.start();
+//myTimer.stop()
