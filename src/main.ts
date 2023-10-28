@@ -108,7 +108,7 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
   let interval: ReturnType<typeof setInterval> | undefined;
   let millisecondInterval: ReturnType<typeof setInterval> | undefined;
   const units: TimeUnit[] = ['seconds', 'minutes', 'hours', 'days'];
-  
+
   const formatNumberWithLeadingZeros = (
     value: number,
     digits: number
@@ -130,29 +130,32 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
     }
     return word;
   };
-  
+
   const getWordForm = (value: number, words: string[], maxLength: number) => {
     let chosenWord = '';
-    
+
     if (words.length === 1) {
-        return padWord(words[0], maxLength);
+      return padWord(words[0], maxLength);
     }
 
     if (locale === 'ru') {
-        const lastDigit = value % 10;
-        const lastTwoDigits = value % 100;
+      const lastDigit = value % 10;
+      const lastTwoDigits = value % 100;
 
-        if (lastDigit === 1 && lastTwoDigits !== 11) chosenWord = words[0];
-        else if (lastDigit >= 2 && lastDigit <= 4 && ![12, 13, 14].includes(lastTwoDigits))
-            chosenWord = words[1];
-        else chosenWord = words[2];
+      if (lastDigit === 1 && lastTwoDigits !== 11) chosenWord = words[0];
+      else if (
+        lastDigit >= 2 &&
+        lastDigit <= 4 &&
+        ![12, 13, 14].includes(lastTwoDigits)
+      )
+        chosenWord = words[1];
+      else chosenWord = words[2];
     } else {
-        chosenWord = value === 1 ? words[0] : words[1];
+      chosenWord = value === 1 ? words[0] : words[1];
     }
 
     return padWord(chosenWord, maxLength);
-};
-
+  };
 
   const update = () => {
     let carry = -1;
@@ -202,6 +205,15 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
   };
 
   const getTime = () => {
+    // Функция для форматирования числа без ведущих нулей, но с пробелом:
+    const formatNumberWithSpace = (value: number, digits: number): string => {
+      let result = value.toString();
+      while (result.length < digits) {
+        result = '\u00A0' + result;
+      }
+      return result;
+    };
+
     // Вычисляем максимальную длину слова для каждой единицы времени (кроме миллисекунд)
     const maxDaysLength = getMaxWordLength(localization[locale].days);
     const maxHoursLength = getMaxWordLength(localization[locale].hours);
@@ -211,18 +223,17 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
     return {
       days: leadingZeros
         ? formatNumberWithLeadingZeros(timeLeft.days, 2)
-        : timeLeft.days,
+        : formatNumberWithSpace(timeLeft.days, 2),
       hours: leadingZeros
         ? formatNumberWithLeadingZeros(timeLeft.hours, 2)
-        : timeLeft.hours,
+        : formatNumberWithSpace(timeLeft.hours, 2),
       minutes: leadingZeros
         ? formatNumberWithLeadingZeros(timeLeft.minutes, 2)
-        : timeLeft.minutes,
+        : formatNumberWithSpace(timeLeft.minutes, 2),
       seconds: leadingZeros
         ? formatNumberWithLeadingZeros(timeLeft.seconds, 2)
-        : timeLeft.seconds,
+        : formatNumberWithSpace(timeLeft.seconds, 2),
       milliseconds: formatNumberWithLeadingZeros(timeLeft.milliseconds, 3), // Всегда форматируем миллисекунды с ведущими нулями
-
       daysWord: showWords
         ? getWordForm(timeLeft.days, localization[locale].days, maxDaysLength)
         : '',
@@ -389,8 +400,8 @@ const myTimer = vanillaTimer({
   days: 20,
   hours: 5,
   minutes: 34,
-  seconds: 23,
-  milliseconds: 9,
+  seconds: 11,
+  milliseconds: 900,
   locale: 'ru',
   showWords: true,
   sep: ' ',
