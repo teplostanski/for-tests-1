@@ -109,6 +109,31 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
   let millisecondInterval: ReturnType<typeof setInterval> | undefined;
   const units: TimeUnit[] = ['seconds', 'minutes', 'hours', 'days'];
 
+  const timeUnitsInOrder: (keyof TimerOptions)[] = [
+    'days',
+    'hours',
+    'minutes',
+    'seconds',
+    'milliseconds',
+  ];
+
+  const definedUnits = timeUnitsInOrder.filter(
+    (unit) => options[unit] !== undefined
+  );
+
+  for (let i = 0; i < definedUnits.length - 1; i++) {
+    const currentUnitIndex = timeUnitsInOrder.indexOf(definedUnits[i]);
+    const nextUnitIndex = timeUnitsInOrder.indexOf(definedUnits[i + 1]);
+
+    if (nextUnitIndex - currentUnitIndex !== 1) {
+      throw new Error(
+        `Missing parameter(s) between '${definedUnits[i]}' and '${
+          definedUnits[i + 1]
+        }' Make sure that the transmitted time units follow the order: days, hours, minutes, seconds. You can't miss what's in the middle. For example, days -> hours -> seconds without minutes are not allowed.`
+      );
+    }
+  }
+
   const formatNumberWithLeadingZeros = (
     value: number,
     digits: number
@@ -358,7 +383,11 @@ export const vanillaTimer = (options: VanillaTimerOptions) => {
   const updateDisplay = () => {
     const currentTime = timer.getTime();
     for (const key in elements) {
-      if (key !== 'wrapper' && key in currentTime) {
+      if (
+        key !== 'wrapper' &&
+        options[key as keyof TimerOptions] !== undefined
+      ) {
+        // Проверка добавлена здесь
         const elementId = elements[key as keyof VanillaTimerElements];
         const element = document.getElementById(elementId);
         if (element) {
@@ -398,8 +427,8 @@ const myTimerElements: VanillaTimerElements = {
 const myTimer = vanillaTimer({
   elements: myTimerElements,
   days: 20,
-  hours: 5,
-  minutes: 34,
+  //hours: 5,
+  //minutes: 34,
   seconds: 11,
   milliseconds: 900,
   locale: 'ru',
