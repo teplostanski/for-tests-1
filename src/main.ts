@@ -106,8 +106,7 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
   };
 
   let interval: ReturnType<typeof setInterval> | undefined;
-  let millisecondInterval: ReturnType<typeof setInterval> | undefined;
-  const units: TimeUnit[] = ['seconds', 'minutes', 'hours', 'days'];
+  //let millisecondInterval: ReturnType<typeof setInterval> | undefined;
 
   const timeUnitsInOrder: (keyof TimerOptions)[] = [
     'days',
@@ -181,13 +180,13 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
 
     return padWord(chosenWord, maxLength);
   };
-  
+
   const stop = () => {
     if (interval) clearInterval(interval);
-    if (millisecondInterval) clearInterval(millisecondInterval);
-    interval = undefined;
-    millisecondInterval = undefined;
-  
+    //if (millisecondInterval) clearInterval(millisecondInterval);
+    //interval = undefined;
+    //millisecondInterval = undefined;
+
     // Обнуляем все единицы времени:
     timeLeft.days = 0;
     timeLeft.hours = 0;
@@ -195,50 +194,41 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
     timeLeft.seconds = 0;
     timeLeft.milliseconds = 0;
   };
-  
 
   const update = () => {
-    let carry = -1;
-    for (let unit of units) {
-      timeLeft[unit] += carry;
-      carry = 0;
-      if (timeLeft[unit] < 0) {
-        carry = -1;
-        timeLeft[unit] =
-          unit === 'seconds'
-            ? 59
-            : unit === 'minutes'
-            ? 59
-            : unit === 'hours'
-            ? 23
-            : 0;
-      }
-    }
-
-    if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0 && timeLeft.milliseconds === 0) {
-      stop();
-    }
-};
-
-  const updateMilliseconds = () => {
     timeLeft.milliseconds -= 10;
 
     if (timeLeft.milliseconds < 0) {
       timeLeft.milliseconds = 990;
+      timeLeft.seconds--;
+
+      if (timeLeft.seconds < 0) {
+        timeLeft.seconds = 59;
+        timeLeft.minutes--;
+
+        if (timeLeft.minutes < 0) {
+          timeLeft.minutes = 59;
+          timeLeft.hours--;
+
+          if (timeLeft.hours < 0) {
+            timeLeft.hours = 23;
+            timeLeft.days--;
+
+            if (timeLeft.days < 0) {
+              stop();
+            }
+          }
+        }
+      }
     }
   };
 
   const start = (callback?: () => void) => {
-    update();
-    updateMilliseconds();
-
-    interval = setInterval(update, 1000);
-    millisecondInterval = setInterval(() => {
-        updateMilliseconds();
-        if (callback) callback();
+    interval = setInterval(() => {
+      update();
+      if (callback) callback();
     }, 10);
-};
-
+  };
 
   const getTime = () => {
     // Функция для форматирования числа без ведущих нулей, но с пробелом:
@@ -303,8 +293,6 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
         : '',
     };
   };
-
-
 
   return {
     days: timeLeft.days,
@@ -437,8 +425,8 @@ const myTimer = vanillaTimer({
   elements: myTimerElements,
   days: 0,
   hours: 0,
-  minutes: 0,
-  seconds: 2,
+  minutes: 1,
+  seconds: 4,
   milliseconds: 900,
   locale: 'ru',
   showWords: true,
