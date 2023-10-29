@@ -1,38 +1,32 @@
-import './style.css';
-import typescriptLogo from './typescript.svg';
-import viteLogo from '/vite.svg';
-import { setupCounter } from './counter.ts';
-
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    
+  <div>    
     <div id="timer">
-  <span id="day"></span>
-  <span id="hours"></span>
-  <span id="minutes"></span>
-  <span id="seconds"></span>
-  <span id="milliseconds"></span>
-</div>
+    <span id="day"></span>
+    <span id="hours"></span>
+    <span id="minutes"></span>
+    <span id="seconds"></span>
+    <span id="milliseconds"></span>
+  </div>
+  
+  <div id="buttons">
+      <button id="play">play</button>
+      <button id="stop">stop</button>
+      <button id="pause">pause</button>
+      <button id="resume">resume</button>
+  </div>
   </div>
 `;
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!);
-
 // coreTimer.ts
 
-type TimeUnit = 'milliseconds' | 'seconds' | 'minutes' | 'hours' | 'days';
+export type TimeUnit =
+  | 'milliseconds'
+  | 'seconds'
+  | 'minutes'
+  | 'hours'
+  | 'days';
 
-interface TimerOptions {
+export interface TimerOptions {
   days?: number;
   hours?: number;
   minutes?: number;
@@ -44,7 +38,7 @@ interface TimerOptions {
   leadingZeros?: boolean;
 }
 
-interface TimerInstance {
+export interface TimerInstance {
   days: number;
   hours: number;
   minutes: number;
@@ -65,9 +59,12 @@ interface TimerInstance {
     secondsWord: string;
     millisecondsWord: string;
   };
+  setTime: (time: Record<TimeUnit, number>) => void;
+  pause: () => void;
+  resume: (callback?: () => void) => void;
 }
 
-const localization = {
+export const localization = {
   ru: {
     days: ['день', 'дня', 'дней'],
     hours: ['час', 'часа', 'часов'],
@@ -105,7 +102,7 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
     milliseconds,
   };
 
-  let interval: ReturnType<typeof setInterval> | undefined;
+  let interval: ReturnType<typeof setInterval> | null;
   //let millisecondInterval: ReturnType<typeof setInterval> | undefined;
 
   const timeUnitsInOrder: (keyof TimerOptions)[] = [
@@ -183,6 +180,7 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
 
   const stop = () => {
     if (interval) clearInterval(interval);
+    interval = null;
     //if (millisecondInterval) clearInterval(millisecondInterval);
     //interval = undefined;
     //millisecondInterval = undefined;
@@ -221,6 +219,10 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
         }
       }
     }
+  };
+
+  const setTime = (time: Record<TimeUnit, number>) => {
+    Object.assign(timeLeft, time);
   };
 
   const start = (callback?: () => void) => {
@@ -294,6 +296,15 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
     };
   };
 
+  const pause = () => {
+    if (interval) clearInterval(interval);
+    interval = null;
+  };
+
+  const resume = (callback?: () => void) => {
+    if (!interval) start(callback);
+  };
+
   return {
     days: timeLeft.days,
     hours: timeLeft.hours,
@@ -352,6 +363,9 @@ export const coreTimer = (options: TimerOptions): TimerInstance => {
     start,
     stop,
     getTime,
+    setTime,
+    pause,
+    resume,
   };
 };
 
@@ -398,6 +412,10 @@ export const vanillaTimer = (options: VanillaTimerOptions) => {
     }
   };
 
+  const setTimer = (time: Record<TimeUnit, number>) => {
+    timer.setTime(time);
+  };
+
   return {
     start: () => {
       timer.start(updateDisplay);
@@ -406,19 +424,59 @@ export const vanillaTimer = (options: VanillaTimerOptions) => {
       timer.stop();
       updateDisplay(); // Обновляем отображение после остановки таймера
     },
+    pause: () => {
+      timer.pause();
+    },
     updateDisplay,
+    setTimer,
+    resume: () => {
+      timer.resume(updateDisplay);
+    },
   };
 };
 
 // Пример использования
 
+//const myTimerElements: VanillaTimerElements = {
+//  days: 'day',
+//  hours: 'hours',
+//  minutes: 'minutes',
+//  seconds: 'seconds',
+//  milliseconds: 'milliseconds',
+//  wrapper: 'timer',
+//};
+
+//const myTimer = vanillaTimer({
+//  elements: myTimerElements,
+//  days: 0,
+//  hours: 0,
+//  minutes: 1,
+//  seconds: 4,
+//  milliseconds: 900,
+//  locale: 'ru',
+//  showWords: true,
+//  sep: ' ',
+//  leadingZeros: false,
+//});
+
+//myTimer.start();
+//myTimer.stop()
+//type VanillaTimerElements = {
+//  days: string;
+//  hours: string;
+//  minutes: string;
+//  seconds: string;
+//  milliseconds: string;
+//  wrapper: string;
+//};
+
 const myTimerElements: VanillaTimerElements = {
-  days: 'day',
-  hours: 'hours',
-  minutes: 'minutes',
-  seconds: 'seconds',
-  milliseconds: 'milliseconds',
-  wrapper: 'timer',
+  days: "day",
+  hours: "hours",
+  minutes: "minutes",
+  seconds: "seconds",
+  milliseconds: "milliseconds",
+  wrapper: "timer",
 };
 
 const myTimer = vanillaTimer({
@@ -428,11 +486,39 @@ const myTimer = vanillaTimer({
   minutes: 1,
   seconds: 4,
   milliseconds: 900,
-  locale: 'ru',
+  locale: "ru",
   showWords: true,
-  sep: ' ',
+  sep: " ",
   leadingZeros: false,
 });
 
-myTimer.start();
-//myTimer.stop()
+const startBtn = document.querySelector("#start") as HTMLButtonElement;
+const stopBtn = document.querySelector("#stop") as HTMLButtonElement;
+const pauseBtn = document.querySelector("#pause") as HTMLButtonElement;
+const resumeBtn = document.querySelector("#resume") as HTMLButtonElement;
+
+if (startBtn) {
+  startBtn.addEventListener("click", () => {
+    myTimer.setTimer({
+      days: 0,
+      hours: 0,
+      minutes: 1,
+      seconds: 4,
+      milliseconds: 900,
+    });
+    myTimer.start();
+  });
+}
+if (stopBtn) {
+  stopBtn.addEventListener("click", () => myTimer.stop());
+}
+if (pauseBtn) {
+  pauseBtn.addEventListener("click", () => myTimer.pause());
+  pauseBtn.addEventListener("click", () => {
+  myTimer.pause()
+});
+}
+
+if (resumeBtn) {
+  resumeBtn.addEventListener("click", () => myTimer.resume());
+}
